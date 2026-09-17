@@ -9,6 +9,7 @@
 	'use strict';
 
 	var knopf, fenster, sperre, arbeit, verlauf, form, eingabe, auswahl, neu, auf, passwort, meldung, name, uhr, aus;
+	var einrichten, anmelden, neu1, neu2, setzen, einrichtenMeldung, wechseln, aendern, alt, neu3, neu4, aendernKnopf, aendernMeldung;
 
 	function el( id ) {
 		return document.getElementById( id );
@@ -54,9 +55,32 @@
 		return auswahl.options[ auswahl.selectedIndex ].text;
 	}
 
+	/**
+	 * Ersteinrichtung zeigen: Agentur-Passwort festlegen.
+	 *
+	 * @param {string} text Meldung.
+	 */
+	function zeigeEinrichten( text ) {
+		sperre.hidden = false;
+		arbeit.hidden = true;
+		aus.hidden = true;
+		neu.hidden = true;
+		uhr.hidden = true;
+		einrichten.hidden = false;
+		anmelden.hidden = true;
+		einrichtenMeldung.textContent = text || '';
+		neu1.value = '';
+		neu2.value = '';
+		neu1.focus();
+	}
+
 	/** Sperrbildschirm zeigen. */
 	function zeigeSperre( text ) {
 		sperre.hidden = false;
+		einrichten.hidden = true;
+		anmelden.hidden = false;
+		aendern.hidden = true;
+		aendernMeldung.textContent = '';
 		arbeit.hidden = true;
 		aus.hidden = true;
 		neu.hidden = true;
@@ -109,7 +133,9 @@
 		name.textContent = gewaehlt();
 		ruf( '/status?site=' + encodeURIComponent( auswahl.value ), null )
 			.then( function ( d ) {
-				if ( d && d.entsperrt ) {
+				if ( d && d.eingerichtet === false ) {
+					zeigeEinrichten( '' );
+				} else if ( d && d.entsperrt ) {
 					zeigeArbeit( d.restzeit );
 				} else {
 					zeigeSperre( d && d.restversuche < 5 ? 'Bitte entsperren — noch ' + d.restversuche + ' Versuche.' : '' );
@@ -136,6 +162,19 @@
 		name = el( 'wpaeg-name' );
 		uhr = el( 'wpaeg-uhr' );
 		aus = el( 'wpaeg-aus' );
+		einrichten = el( 'wpaeg-einrichten' );
+		anmelden = el( 'wpaeg-anmelden' );
+		neu1 = el( 'wpaeg-neu1' );
+		neu2 = el( 'wpaeg-neu2' );
+		setzen = el( 'wpaeg-setzen' );
+		einrichtenMeldung = el( 'wpaeg-einrichten-meldung' );
+		wechseln = el( 'wpaeg-wechseln' );
+		aendern = el( 'wpaeg-aendern' );
+		alt = el( 'wpaeg-alt' );
+		neu3 = el( 'wpaeg-neu3' );
+		neu4 = el( 'wpaeg-neu4' );
+		aendernKnopf = el( 'wpaeg-aendern-knopf' );
+		aendernMeldung = el( 'wpaeg-aendern-meldung' );
 		if ( ! knopf || ! fenster ) {
 			return;
 		}
@@ -149,6 +188,57 @@
 				zustand();
 			}
 			knopf.setAttribute( 'aria-expanded', zuklappen ? 'false' : 'true' );
+		} );
+
+		// Ersteinrichtung: Passwort festlegen
+		setzen.addEventListener( 'click', function () {
+			setzen.disabled = true;
+			ruf( '/setup', { neu: neu1.value, wiederholung: neu2.value } )
+				.then( function ( d ) {
+					setzen.disabled = false;
+					if ( d && d.eingerichtet ) {
+						zeigeSperre( 'Passwort gesetzt. Bitte jetzt eingeben.' );
+					} else {
+						einrichtenMeldung.textContent = ( d && d.fehler ) ? d.fehler : 'Festlegen fehlgeschlagen.';
+					}
+				} )
+				.catch( function () {
+					setzen.disabled = false;
+					einrichtenMeldung.textContent = 'Keine Verbindung zur Zentrale.';
+				} );
+		} );
+		neu2.addEventListener( 'keydown', function ( e ) {
+			if ( 'Enter' === e.key ) {
+				e.preventDefault();
+				setzen.click();
+			}
+		} );
+
+		// Passwort ändern
+		wechseln.addEventListener( 'click', function ( e ) {
+			e.preventDefault();
+			aendern.hidden = ! aendern.hidden;
+			aendernMeldung.textContent = '';
+			if ( ! aendern.hidden ) {
+				alt.value = neu3.value = neu4.value = '';
+				alt.focus();
+			}
+		} );
+		aendernKnopf.addEventListener( 'click', function () {
+			aendernKnopf.disabled = true;
+			ruf( '/passwort', { bisher: alt.value, neu: neu3.value, wiederholung: neu4.value } )
+				.then( function ( d ) {
+					aendernKnopf.disabled = false;
+					if ( d && d.geaendert ) {
+						zeigeSperre( 'Passwort geändert. Bitte mit dem neuen Passwort entsperren.' );
+					} else {
+						aendernMeldung.textContent = ( d && d.fehler ) ? d.fehler : 'Ändern fehlgeschlagen.';
+					}
+				} )
+				.catch( function () {
+					aendernKnopf.disabled = false;
+					aendernMeldung.textContent = 'Keine Verbindung zur Zentrale.';
+				} );
 		} );
 
 		// Entsperren

@@ -43,18 +43,25 @@ z("---\n")
 
 # ------------------------------------------------------------- Optionen
 z("## Datenbank\n")
-z("| Option | Zweck |")
-z("|---|---|")
+z("Diese Optionen liest oder schreibt das Plugin. Die Namen werden aus dem Quelltext")
+z("abgeleitet, damit auch eine noch nicht angelegte Option erscheint. Zugangstoken")
+z("liegen darin **verschlüsselt**.\n")
+z("| Option | Inhalt | Zustand |")
+z("|---|---|---|")
 zwecke = {
-    "wp_agency_edit_sites": "Liste der betreuten Websites. Zugangstoken darin **verschlüsselt**.",
-    "wp_agency_edit_llm": "Zugang zum Sprachmodell: Basis-URL, Modell, Schlüssel, Temperatur, Rundenzahl.",
+    "wp_agency_edit_sites": "Betreute Websites samt Zugangstoken (**verschlüsselt**)",
+    "wp_agency_edit_llm": "Sprachmodell: Basis-URL, Modell, Schlüssel, Temperatur, Rundenzahl",
+    "wp_agency_edit_sperre": "Agentur-Passwort als Hash (bcrypt) und Zeitpunkt des Setzens",
 }
 for o in DATEN.get("optionen", []):
     if o["name"].startswith("_transient"):
         continue
-    zweck = zwecke.get(o["name"], "")
-    vorhanden = "vorhanden" if o.get("vorhanden") and o["groesse"] else "noch nicht angelegt"
-    z(f"| `{o['name']}` | {zweck} ({vorhanden}) |")
+    zweck = zwecke.get(o["name"]) or (o.get("felder") or "—")
+    if o.get("vorhanden"):
+        zustand = f"angelegt ({o.get('groesse', 0)} B)"
+    else:
+        zustand = "noch nicht angelegt"
+    z(f"| `{o['name']}` | {zweck} | {zustand} |")
 z("")
 transients = [o for o in DATEN.get("optionen", []) if o["name"].startswith("_transient_") and "timeout" not in o["name"]]
 if transients:

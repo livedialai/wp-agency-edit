@@ -39,6 +39,11 @@ class WP_Agency_Edit_Sitzung {
 	const SPERRE = 600;
 
 	/**
+	 * Option mit dem eigenen Agentur-Passwort (Hash).
+	 */
+	const PASSWORT = 'wp_agency_edit_sperre';
+
+	/**
 	 * Kennung des Sitzungsspeichers.
 	 *
 	 * @return string
@@ -54,6 +59,139 @@ class WP_Agency_Edit_Sitzung {
 	 */
 	private static function versuche_schluessel(): string {
 		return 'wpaeg_versuche_' . get_current_user_id();
+	}
+
+	/**
+	 * Ist bereits ein Agentur-Passwort gesetzt?
+	 *
+	 * @return bool
+	 */
+	public static function eingerichtet(): bool {
+		$o = get_option( self::PASSWORT, array() );
+		return is_array( $o ) && ! empty( $o['hash'] );
+	}
+
+	/**
+	 * Wann wurde das Passwort gesetzt?
+	 *
+	 * @return string
+	 */
+	public static function gesetzt_am(): string {
+		$o = get_option( self::PASSWORT, array() );
+		return is_array( $o ) && ! empty( $o['zeit'] ) ? (string) $o['zeit'] : '';
+	}
+
+	/**
+	 * Ersteinrichtung: Agentur-Passwort festlegen.
+	 *
+	 * @param string $neu       Neues Passwort.
+	 * @param string $wiederholung Wiederholung.
+	 * @return true|WP_Error
+	 */
+	public static function festlegen( string $neu, string $wiederholung ) {
+		if ( self::eingerichtet() ) {
+			return new WP_Error( 'wpaeg_schon', __( 'Es ist bereits ein Agentur-Passwort gesetzt.', 'wp-agency-edit' ) );
+		}
+		return self::setzen( $neu, $wiederholung );
+	}
+
+	/**
+	 * Passwort ändern (bisheriges nötig).
+	 *
+	 * @param string $bisher      Bisheriges Passwort.
+	 * @param string $neu         Neues Passwort.
+	 * @param string $wiederholung Wiederholung.
+	 * @return true|WP_Error
+	 */
+	public static function aendern( string $bisher, string $neu, string $wiederholung ) {
+		if ( ! self::eingerichtet() ) {
+			return new WP_Error( 'wpaeg_keins', __( 'Es ist noch kein Agentur-Passwort gesetzt.', 'wp-agency-edit' ) );
+		}
+		if ( self::restversuche() < 1 ) {
+			return new WP_Error( 'wpaeg_gesperrt', __( 'Zu viele Fehlversuche. Bitte später erneut versuchen.', 'wp-agency-edit' ) );
+		}
+		if ( ! self::pruefen_passwort( $bisher ) ) {
+			self::fehlversuch_zaehlen();
+			return new WP_Error(
+				'wpaeg_falsch',
+				sprintf(
+					/* translators: %d: verbleibende Versuche */
+					__( 'Bisheriges Passwort stimmt nicht. Noch %d Versuche.', 'wp-agency-edit' ),
+					self::restversuche()
+				)
+			);
+		}
+		$gesetzt = self::setzen( $neu, $wiederholung );
+		if ( ! is_wp_error( $gesetzt ) ) {
+			// Nach einer Änderung ist die Sitzung zu — das neue Passwort wird
+			// sofort gebraucht.
+			self::sperren();
+		}
+		return $gesetzt;
+	}
+
+	/**
+	 * Passwort speichern (gehasht).
+	 *
+	 * @param string $neu         Neues Passwort.
+	 * @param string $wiederholung Wiederholung.
+	 * @return true|WP_Error
+	 */
+	private static function setzen( string $neu, string $wiederholung ) {
+		if ( strlen( $neu ) < 8 ) {
+			return new WP_Error( 'wpaeg_kurz', __( 'Das Passwort braucht mindestens 8 Zeichen.', 'wp-agency-edit' ) );
+		}
+		if ( $neu !== $wiederholung ) {
+			return new WP_Error( 'wpaeg_ungleich', __( 'Die beiden Eingaben stimmen nicht überein.', 'wp-agency-edit' ) );
+		}
+		update_option(
+			self::PASSWORT,
+			array(
+				'hash' => wp_hash_password( $neu ),
+				'zeit' => current_time( 'mysql' ),
+			),
+			false
+		);
+		delete_transient( self::versuche_schluessel() );
+		return true;
+	}
+
+	/**
+	 * Passwort zurücksetzen — nur über die Einstellungsseite.
+	 *
+	 * @return void
+	 */
+	public static function zuruecksetzen(): void {
+		delete_option( self::PASSWORT );
+		self::sperren();
+	}
+
+	/**
+	 * Passwort gegen den gespeicherten Hash prüfen, mit Rückfall auf das
+	 * eigene WordPress-Passwort.
+	 *
+	 * @param string $passwort Eingabe.
+	 * @return bool
+	 */
+	private static function pruefen_passwort( string $passwort ): bool {
+		$o = get_option( self::PASSWORT, array() );
+		if ( is_array( $o ) && ! empty( $o['hash'] ) && wp_check_password( $passwort, (string) $o['hash'] ) ) {
+			return true;
+		}
+		// Rückfall: das eigene WordPress-Passwort öffnet ebenfalls. Damit ist
+		// niemand ausgesperrt, der sein Passwort vergisst.
+		$benutzer = wp_get_current_user();
+		return $benutzer && $benutzer->ID && wp_check_password( $passwort, $benutzer->user_pass, $benutzer->ID );
+	}
+
+	/**
+	 * Einen Fehlversuch zählen.
+	 *
+	 * @return void
+	 */
+	private static function fehlversuch_zaehlen(): void {
+		$v = (int) get_transient( self::versuche_schluessel() ) + 1;
+		set_transient( self::versuche_schluessel(), $v, self::SPERRE );
 	}
 
 	/**
@@ -154,15 +292,16 @@ class WP_Agency_Edit_Sitzung {
 			);
 		}
 
-		$benutzer = wp_get_current_user();
-		if ( ! $benutzer || ! $benutzer->ID ) {
+		if ( ! self::eingerichtet() ) {
+			return new WP_Error( 'wpaeg_ersteinrichtung', __( 'Bitte zuerst ein Agentur-Passwort festlegen.', 'wp-agency-edit' ) );
+		}
+		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'wpaeg_nutzer', __( 'Nicht angemeldet.', 'wp-agency-edit' ) );
 		}
 
-		// Gegen das eigene Benutzerkonto prüfen.
-		if ( ! wp_check_password( $passwort, $benutzer->user_pass, $benutzer->ID ) ) {
-			$v = (int) get_transient( self::versuche_schluessel() ) + 1;
-			set_transient( self::versuche_schluessel(), $v, self::SPERRE );
+		// Gegen den gespeicherten Hash prüfen, mit Rückfall auf das WordPress-Passwort.
+		if ( ! self::pruefen_passwort( $passwort ) ) {
+			self::fehlversuch_zaehlen();
 			return new WP_Error(
 				'wpaeg_falsch',
 				sprintf(

@@ -128,10 +128,58 @@ foreach ( rest_get_server()->get_routes() as $pfad => $routen ) {
 	unset( $gesehen );
 }
 
-/* --- Optionen in der Datenbank ----------------------------------------- */
+/* --- Optionen ----------------------------------------------------------- */
+
+// Namen aus dem Quelltext ableiten: so erscheint auch eine Option, die noch
+// gar nicht angelegt wurde.
+$aus_quelle = array();
+
+// Erst die Klassenkonstanten — viele Optionen heißen dort, nicht als Zeichenkette.
+foreach ( get_declared_classes() as $klasse ) {
+	if ( 0 !== strpos( $klasse, 'WP_Agency_Edit' ) ) {
+		continue;
+	}
+	try {
+		foreach ( ( new ReflectionClass( $klasse ) )->getConstants() as $konst => $wert ) {
+			if ( is_string( $wert ) && 0 === strpos( $wert, 'wp_agency_edit_' ) ) {
+				$aus_quelle[ $wert ] = true;
+			}
+		}
+	} catch ( Throwable $e ) {
+		continue;
+	}
+}
+foreach ( array_merge(
+	(array) glob( WPAEG_DIR . '*.php' ),
+	(array) glob( WPAEG_DIR . 'includes/*.php' ),
+	(array) glob( WPAEG_DIR . 'admin/*.php' )
+) as $datei ) {
+	$inhalt = (string) file_get_contents( $datei );
+	if ( preg_match_all( '/(?:get|update|delete)_option\(\s*[\'"]([^\'"]+)[\'"]/', $inhalt, $t ) ) {
+		foreach ( $t[1] as $n ) {
+			$aus_quelle[ trim( $n ) ] = true;
+		}
+	}
+}
+foreach ( $aus_quelle as $name => $_ ) {
+	if ( 0 === strpos( $name, '_transient' ) ) {
+		unset( $aus_quelle[ $name ] );
+	}
+}
+ksort( $aus_quelle );
+foreach ( array_keys( $aus_quelle ) as $name ) {
+	$wert = get_option( $name, null );
+	$daten['optionen'][] = array(
+		'name'      => $name,
+		'typ'       => is_array( $wert ) ? 'Feldgruppe' : gettype( $wert ),
+		'felder'    => is_array( $wert ) ? implode( ', ', array_keys( $wert ) ) : '',
+		'vorhanden' => null !== $wert,
+		'groesse'   => null !== $wert ? strlen( maybe_serialize( $wert ) ) : 0,
+	);
+}
 
 global $wpdb;
-$muster = array( 'wp_agency_edit_%', '_transient_wpaeg_%', '_transient_timeout_wpaeg_%' );
+$muster = array( '_transient_wpaeg_%', '_transient_timeout_wpaeg_%' );
 foreach ( $muster as $m ) {
 	$zeilen = $wpdb->get_results(
 		$wpdb->prepare( "SELECT option_name, LENGTH(option_value) AS groesse FROM {$wpdb->options} WHERE option_name LIKE %s ORDER BY option_name", $m )
@@ -144,18 +192,13 @@ foreach ( $muster as $m ) {
 		);
 	}
 }
-// Auch die Standardwerte nennen, selbst wenn noch nichts gespeichert ist.
-foreach ( array( WP_Agency_Edit_Speicher::OPTION, 'wp_agency_edit_llm' ) as $name ) {
-	$gefunden = false;
-	foreach ( $daten['optionen'] as $o ) {
-		if ( $o['name'] === $name ) {
-			$gefunden = true;
-		}
-	}
-	if ( ! $gefunden ) {
-		$daten['optionen'][] = array( 'name' => $name, 'groesse' => 0, 'vorhanden' => false );
-	}
+// Doppelte entfernen, Reihenfolge festlegen.
+$rein = array();
+foreach ( $daten['optionen'] as $o ) {
+	$rein[ $o['name'] ] = $o;
 }
+ksort( $rein );
+$daten['optionen'] = array_values( $rein );
 
 /* --- Haken aus dem Quelltext ------------------------------------------- */
 

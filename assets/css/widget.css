@@ -212,6 +212,32 @@
 	cursor: pointer;
 }
 
+#wpaeg-setzen, #wpaeg-aendern-knopf {
+	border: none;
+	border-radius: 10px;
+	padding: 11px 16px;
+	background: #121826;
+	color: #fff;
+	font-weight: 700;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+#wpaeg-setzen:disabled, #wpaeg-aendern-knopf:disabled { opacity: 0.6; cursor: default; }
+
+#wpaeg-aendern {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 4px;
+	padding-top: 12px;
+	border-top: 1px dashed #d0d5dd;
+}
+
+#wpaeg-aendern input { width: 100%; padding: 11px 13px; border: 1px solid #d0d5dd; border-radius: 10px; font-size: 14px; font-family: inherit; }
+
+#wpaeg-wechseln { color: #0f6b6e; }
+
 #wpaeg-auf:disabled {
 	opacity: 0.6;
 	cursor: default;

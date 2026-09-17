@@ -1,6 +1,6 @@
 # Funktionen — vollständige Referenz
 
-Erzeugt am 2026-09-17 15:01:16 · WordPress 7.1 · PHP 8.4.25 · Plugin 1.1.0 · https://gofonia.life
+Erzeugt am 2026-09-17 15:05:08 · WordPress 7.1 · PHP 8.4.25 · Plugin 1.2.0 · https://gofonia.life
 
 Diese Datei wird aus einer **laufenden Installation** erzeugt: Klassen und Methoden über
 Reflexion, die Routen aus dem REST-Server, die Optionen aus der Datenbank, die Haken aus dem
@@ -17,25 +17,33 @@ Namensraum: `wp-agency-edit/v1`. Alle Routen verlangen `manage_options`.
 | GET | `/` | `namespace`, `context` |
 | GET | `/status` | — |
 | POST | `/chat` | — |
+| POST | `/setup` | — |
+| POST | `/passwort` | — |
 | POST | `/unlock` | — |
 | POST | `/lock` | — |
 | POST | `/reset` | — |
 
-In der Anfrage verwendete Parameternamen: `nachricht`, `passwort`, `site`.
+In der Anfrage verwendete Parameternamen: `bisher`, `nachricht`, `neu`, `passwort`, `site`, `wiederholung`.
 
 ---
 
 ## Datenbank
 
-| Option | Zweck |
-|---|---|
-| `wp_agency_edit_llm` | Zugang zum Sprachmodell: Basis-URL, Modell, Schlüssel, Temperatur, Rundenzahl. (vorhanden) |
-| `wp_agency_edit_sites` | Liste der betreuten Websites. Zugangstoken darin **verschlüsselt**. (vorhanden) |
+Diese Optionen liest oder schreibt das Plugin. Die Namen werden aus dem Quelltext
+abgeleitet, damit auch eine noch nicht angelegte Option erscheint. Zugangstoken
+liegen darin **verschlüsselt**.
+
+| Option | Inhalt | Zustand |
+|---|---|---|
+| `wp_agency_edit_llm` | Sprachmodell: Basis-URL, Modell, Schlüssel, Temperatur, Rundenzahl | angelegt (234 B) |
+| `wp_agency_edit_sites` | Betreute Websites samt Zugangstoken (**verschlüsselt**) | angelegt (407 B) |
+| `wp_agency_edit_sperre` | Agentur-Passwort als Hash (bcrypt) und Zeitpunkt des Setzens | noch nicht angelegt |
 
 Kurzzeitspeicher (verfallen von selbst):
 
 - `wpaeg_faehig_cea379ea8da3fb723ce8483fd9c603d8` — Fähigkeitsliste einer Website, 5 Minuten.
 - `wpaeg_sitzung_3`
+- `wpaeg_sitzung_5`
 
 ---
 
@@ -73,13 +81,18 @@ Sitzung und Passwortbestätigung.
 
 | Methode | Parameter | Zweck |
 |---|---|---|
+| `aendern()` *(statisch)* | string $bisher, string $neu, string $wiederholung | Passwort ändern (bisheriges nötig). |
 | `beruehren()` *(statisch)* | string $site_id | Lebenszeichen: die Ruhezeit beginnt von vorn. |
 | `dauer()` *(statisch)* | — | Ruhezeit, einstellbar über die Einstellungen. |
+| `eingerichtet()` *(statisch)* | — | Ist bereits ein Agentur-Passwort gesetzt? |
 | `entsperren()` *(statisch)* | string $passwort, string $site_id | Sitzung mit dem eigenen Passwort entsperren. |
 | `entsperrt()` *(statisch)* | string $site_id | Ist die Sitzung entsperrt — und zwar für genau diese Website? |
+| `festlegen()` *(statisch)* | string $neu, string $wiederholung | Ersteinrichtung: Agentur-Passwort festlegen. |
+| `gesetzt_am()` *(statisch)* | — | Wann wurde das Passwort gesetzt? |
 | `restversuche()` *(statisch)* | — | Wie viele Fehlversuche sind noch erlaubt? |
 | `restzeit()` *(statisch)* | string $site_id | Verbleibende Sekunden bis zum Zufallen. |
 | `sperren()` *(statisch)* | — | Sitzung sperren (Abmelden). |
+| `zuruecksetzen()` *(statisch)* | — | Passwort zurücksetzen — nur über die Einstellungsseite. |
 
 ### `includes/class-speicher.php` — `WP_Agency_Edit_Speicher`
 
@@ -116,18 +129,18 @@ Hauptklasse.
 
 | Datei | Zeilen | Größe |
 |---|---:|---:|
-| `CHANGELOG.md` | 26 | 1188 B |
+| `CHANGELOG.md` | 48 | 2250 B |
 | `LICENSE` | — | 17984 B |
-| `README.md` | 136 | 5780 B |
-| `assets/css/widget.css` | 266 | 4182 B |
-| `assets/js/widget.js` | 244 | 6756 B |
+| `README.md` | 157 | 6853 B |
+| `assets/css/widget.css` | 292 | 4789 B |
+| `assets/js/widget.js` | 334 | 9624 B |
 | `includes/class-agent.php` | 342 | 10022 B |
 | `includes/class-fernruf.php` | 206 | 6387 B |
-| `includes/class-sitzung.php` | 184 | 4583 B |
+| `includes/class-sitzung.php` | 323 | 8698 B |
 | `includes/class-speicher.php` | 231 | 6829 B |
 | `prompts/agentur.md` | 42 | 1867 B |
-| `wp-agency-edit.php` | 553 | 23542 B |
-| **gesamt** | **2230** | |
+| `wp-agency-edit.php` | 642 | 28203 B |
+| **gesamt** | **2617** | |
 
 ---
 

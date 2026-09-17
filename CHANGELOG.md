@@ -1,5 +1,26 @@
 # Änderungen
 
+## 1.2.0 — 17.09.2026
+
+Eigenes Agentur-Passwort, im Chatfenster gesetzt und geändert.
+
+- **Ersteinrichtung:** Beim ersten Öffnen wird ein Agentur-Passwort festgelegt
+  (mindestens 8 Zeichen, doppelte Eingabe). Es gilt für das Plugin, nicht für das
+  WordPress-Konto, und wird **gehasht** gespeichert (bcrypt, Kostenfaktor 12).
+- **Ändern** im Sperrbildschirm — das bisherige Passwort wird verlangt; danach ist
+  die Sitzung sofort gesperrt
+- **Vergessen:** das eigene WordPress-Passwort öffnet ebenfalls; zusätzlich ein
+  Knopf *Passwort zurücksetzen* auf der Agentur-Seite
+- Neue Routen `POST /setup` und `POST /passwort`; `/status` meldet
+  `eingerichtet` und `gesetzt_am`
+- Geprüft: zu kurzes Passwort und abweichende Wiederholung abgelehnt, Klartext
+  nicht in der Datenbank, Anmeldung mit Agentur- und mit WordPress-Passwort,
+  Änderung sperrt, altes Passwort gilt danach nicht mehr, Oberfläche fehlerfrei
+
+Beim Wechsel von 1.1.0 auf 1.2.0 ist noch kein Passwort gesetzt — die
+Ersteinrichtung läuft beim nächsten Öffnen des Chatfensters.
+
+
 ## 1.1.0 — 17.09.2026
 
 Sitzungssperre.
