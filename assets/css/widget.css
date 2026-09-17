@@ -1,0 +1,172 @@
+/* Chatfenster der Agentur */
+#wpaeg-widget {
+	position: fixed;
+	right: 26px;
+	bottom: 26px;
+	z-index: 99999;
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+#wpaeg-knopf {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 13px 22px;
+	border: none;
+	border-radius: 60px;
+	background: linear-gradient(115deg, #1a9f9a, #0a5c5f);
+	color: #fff;
+	font-size: 15px;
+	font-weight: 700;
+	cursor: pointer;
+	box-shadow: 0 8px 22px -6px rgba(15, 107, 110, 0.55);
+}
+
+#wpaeg-knopf:hover {
+	transform: translateY(-2px);
+}
+
+#wpaeg-fenster {
+	position: absolute;
+	right: 0;
+	bottom: 64px;
+	width: 420px;
+	max-width: 92vw;
+	background: #fff;
+	border-radius: 16px;
+	box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.35);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.wpaeg-kopf {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 12px 14px;
+	background: #f6f7f7;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.wpaeg-kopf select {
+	flex: 1;
+	border-radius: 8px;
+	padding: 6px 8px;
+	border: 1px solid #d0d5dd;
+	background: #fff;
+	font-size: 14px;
+}
+
+#wpaeg-neu {
+	border: 1px solid #d0d5dd;
+	background: #fff;
+	border-radius: 8px;
+	padding: 5px 10px;
+	cursor: pointer;
+	font-size: 15px;
+	line-height: 1;
+}
+
+#wpaeg-neu:hover {
+	background: #f0f0f1;
+}
+
+#wpaeg-verlauf {
+	max-height: 46vh;
+	overflow-y: auto;
+	padding: 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	background: #fbfbfc;
+}
+
+.wpaeg-nachricht {
+	padding: 10px 13px;
+	border-radius: 12px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	max-width: 92%;
+}
+
+.wpaeg-ich {
+	align-self: flex-end;
+	background: #1a9f9a;
+	color: #fff;
+	border-bottom-right-radius: 3px;
+}
+
+.wpaeg-agent {
+	align-self: flex-start;
+	background: #eef2f5;
+	color: #121826;
+	border-bottom-left-radius: 3px;
+}
+
+.wpaeg-fehler {
+	align-self: flex-start;
+	background: #fdeaea;
+	color: #8a1f1f;
+	border: 1px solid #f3c6c6;
+}
+
+.wpaeg-warte {
+	align-self: flex-start;
+	background: #eef2f5;
+	color: #5a6572;
+	font-style: italic;
+}
+
+.wpaeg-hinweis {
+	margin: 0;
+	padding: 10px 14px;
+	background: #fff8e5;
+	border-bottom: 1px solid #f0e0b0;
+	color: #7a5c00;
+	font-size: 13px;
+}
+
+#wpaeg-form {
+	display: flex;
+	gap: 8px;
+	padding: 12px 14px;
+	border-top: 1px solid #e5e7eb;
+	background: #fff;
+}
+
+#wpaeg-eingabe {
+	flex: 1;
+	resize: vertical;
+	min-height: 44px;
+	border-radius: 10px;
+	border: 1px solid #d0d5dd;
+	padding: 9px 11px;
+	font-size: 14px;
+	font-family: inherit;
+}
+
+#wpaeg-form button {
+	border: none;
+	border-radius: 10px;
+	padding: 0 18px;
+	background: linear-gradient(115deg, #1a9f9a, #0a5c5f);
+	color: #fff;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+#wpaeg-form button:hover {
+	filter: brightness(1.08);
+}
+
+@media (max-width: 600px) {
+	#wpaeg-widget {
+		right: 12px;
+		bottom: 12px;
+	}
+	#wpaeg-fenster {
+		width: 94vw;
+	}
+}
