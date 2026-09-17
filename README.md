@@ -53,6 +53,27 @@ wp plugin install https://github.com/livedialai/wp-agency-edit/releases/latest/d
 Danach unten rechts auf **🏢 Agentur** klicken, die Website auswählen und
 schreiben, was geändert werden soll.
 
+## Sperre
+
+Vor dem Bearbeiten fragt die Zentrale **„Welche Seite möchtest du bearbeiten?"**
+und verlangt danach das **Agentur-Passwort**. Geprüft wird gegen das eigene
+WordPress-Benutzerkonto — es gibt also kein zweites Passwortsystem, sondern eine
+erneute Bestätigung. Das ist dasselbe Muster, das WordPress für heikle Bereiche
+verwendet: Wer an einem offenen Rechner vorbeikommt, kann nicht einfach
+weiterarbeiten.
+
+- **Automatische Sperre** nach einer einstellbaren Ruhezeit (Vorgabe 5 Minuten).
+  Jede Nachricht im Chat gilt als Lebenszeichen und stellt die Uhr zurück.
+- **Abmelden** über den Knopf rechts oben — jederzeit.
+- **Website wechseln sperrt sofort.** Wer eine andere Kundenseite bearbeiten
+  will, muss das Passwort erneut eingeben.
+- **Fehlversuche sind begrenzt:** nach fünf falschen Eingaben ist für zehn
+  Minuten Ruhe.
+- Die Sitzung gilt **nur für die gewählte Website**. Selbst wer die Kennung einer
+  anderen Seite kennt, kommt damit nicht weiter.
+
+Die Ruhezeit steht unter *Agentur → Sprachmodell → Sperre* (1 bis 120 Minuten).
+
 ## Wie es arbeitet
 
 Der Agent spricht nicht mit einer eigenen Kopie der Website, sondern mit der

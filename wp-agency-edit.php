@@ -3,7 +3,7 @@
  * Plugin Name:       WP Agency Edit
  * Plugin URI:        https://github.com/livedialai/wp-agency-edit
  * Description:       Zentrale für betreute WordPress-Websites: Websites mit Adresse und Anwendungspasswort hinterlegen, Verbindung prüfen und per KI-Chat Änderungen auf der jeweiligen Kundenseite vornehmen. Das Sprachmodell läuft hier — die Kundenseite braucht keinen API-Zugang.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.9
  * Requires PHP:      8.0
  * Author:            Weser AI
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WPAEG_VERSION', '1.0.0' );
+define( 'WPAEG_VERSION', '1.1.0' );
 define( 'WPAEG_FILE', __FILE__ );
 define( 'WPAEG_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPAEG_URL', plugin_dir_url( __FILE__ ) );
@@ -35,6 +35,7 @@ class WP_Agency_Edit {
 		require_once WPAEG_DIR . 'includes/class-speicher.php';
 		require_once WPAEG_DIR . 'includes/class-fernruf.php';
 		require_once WPAEG_DIR . 'includes/class-agent.php';
+		require_once WPAEG_DIR . 'includes/class-sitzung.php';
 
 		add_action( 'admin_menu', array( $this, 'menue' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
@@ -151,6 +152,7 @@ class WP_Agency_Edit {
 			$alt = WP_Agency_Edit_Agent::settings();
 			$key = isset( $_POST['llm_schluessel'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['llm_schluessel'] ) ) ) : '';
 			$neu = array(
+				'sperre_minuten' => isset( $_POST['sperre_minuten'] ) ? max( 1, min( 120, (int) $_POST['sperre_minuten'] ) ) : ( $alt['sperre_minuten'] ?? 5 ),
 				'base_url'   => isset( $_POST['llm_base_url'] ) ? esc_url_raw( trim( wp_unslash( $_POST['llm_base_url'] ) ) ) : $alt['base_url'],
 				'modell'     => isset( $_POST['llm_modell'] ) ? sanitize_text_field( wp_unslash( $_POST['llm_modell'] ) ) : $alt['modell'],
 				'temperatur' => isset( $_POST['llm_temperatur'] ) ? (float) str_replace( ',', '.', (string) $_POST['llm_temperatur'] ) : $alt['temperatur'],
@@ -279,6 +281,13 @@ class WP_Agency_Edit {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="sperre_minuten"><?php esc_html_e( 'Sperre', 'wp-agency-edit' ); ?></label></th>
+						<td>
+							<input type="number" size="4" id="sperre_minuten" name="sperre_minuten" value="<?php echo esc_attr( $llm['sperre_minuten'] ?? 5 ); ?>" min="1" max="120"> <?php esc_html_e( 'Minuten', 'wp-agency-edit' ); ?>
+							<p class="description"><?php esc_html_e( 'Nach so vielen Minuten ohne Aktivität fällt die Sitzung von selbst zu. Zum Bearbeiten einer Website muss das eigene WordPress-Passwort erneut eingegeben werden — es gibt also kein zweites Passwort, sondern eine erneute Bestätigung.', 'wp-agency-edit' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><?php esc_html_e( 'Grenzen', 'wp-agency-edit' ); ?></th>
 						<td>
 							<label><?php esc_html_e( 'Temperatur', 'wp-agency-edit' ); ?> <input type="text" size="5" name="llm_temperatur" value="<?php echo esc_attr( $llm['temperatur'] ); ?>"></label>
@@ -340,16 +349,32 @@ class WP_Agency_Edit {
 							<option value="<?php echo esc_attr( $s['id'] ); ?>"><?php echo esc_html( $s['name'] ); ?></option>
 						<?php endforeach; ?>
 					</select>
-					<button type="button" id="wpaeg-neu" title="<?php esc_attr_e( 'Gespräch zurücksetzen', 'wp-agency-edit' ); ?>">↺</button>
+					<span id="wpaeg-uhr" hidden></span>
+					<button type="button" id="wpaeg-aus" hidden><?php esc_html_e( 'Abmelden', 'wp-agency-edit' ); ?></button>
+					<button type="button" id="wpaeg-neu" hidden title="<?php esc_attr_e( 'Gespräch zurücksetzen', 'wp-agency-edit' ); ?>">↺</button>
 				</div>
 				<?php if ( ! $bereit ) : ?>
 					<p class="wpaeg-hinweis"><?php esc_html_e( 'Kein Sprachmodell hinterlegt. Bitte auf der Agentur-Seite eintragen.', 'wp-agency-edit' ); ?></p>
 				<?php endif; ?>
-				<div id="wpaeg-verlauf"></div>
-				<form id="wpaeg-form">
-					<textarea id="wpaeg-eingabe" rows="2" placeholder="<?php esc_attr_e( 'Was soll auf dieser Website geändert werden?', 'wp-agency-edit' ); ?>"></textarea>
-					<button type="submit"><?php esc_html_e( 'Senden', 'wp-agency-edit' ); ?></button>
-				</form>
+
+				<div id="wpaeg-sperre">
+					<p class="wpaeg-frage"><?php esc_html_e( 'Welche Seite möchtest du bearbeiten?', 'wp-agency-edit' ); ?></p>
+					<p class="wpaeg-gewaehlt">🏢 <strong id="wpaeg-name"></strong></p>
+					<label class="wpaeg-feld">
+						<input type="password" id="wpaeg-passwort" autocomplete="current-password" placeholder="<?php esc_attr_e( 'Agentur-Passwort', 'wp-agency-edit' ); ?>">
+					</label>
+					<button type="button" id="wpaeg-auf"><?php esc_html_e( 'Entsperren', 'wp-agency-edit' ); ?></button>
+					<p id="wpaeg-meldung" class="wpaeg-meldung"></p>
+					<p class="wpaeg-klein"><?php esc_html_e( 'Zur Bestätigung dein eigenes WordPress-Passwort. Nach der eingestellten Zeit ohne Aktivität sperrt sich die Sitzung von selbst.', 'wp-agency-edit' ); ?></p>
+				</div>
+
+				<div id="wpaeg-arbeit" hidden>
+					<div id="wpaeg-verlauf"></div>
+					<form id="wpaeg-form">
+						<textarea id="wpaeg-eingabe" rows="2" placeholder="<?php esc_attr_e( 'Was soll auf dieser Website geändert werden?', 'wp-agency-edit' ); ?>"></textarea>
+						<button type="submit"><?php esc_html_e( 'Senden', 'wp-agency-edit' ); ?></button>
+					</form>
+				</div>
 			</div>
 		</div>
 		<?php
@@ -369,10 +394,15 @@ class WP_Agency_Edit {
 			array(
 				'methods'             => 'GET',
 				'permission_callback' => $recht,
-				'callback'            => static function () {
+				'callback'            => static function ( WP_REST_Request $a ) {
+					$site_id = (string) $a->get_param( 'site' );
 					return new WP_REST_Response(
 						array(
-							'bereit' => WP_Agency_Edit_Agent::bereit(),
+							'bereit'    => WP_Agency_Edit_Agent::bereit(),
+							'entsperrt' => $site_id ? WP_Agency_Edit_Sitzung::entsperrt( $site_id ) : false,
+							'restzeit'  => $site_id ? WP_Agency_Edit_Sitzung::restzeit( $site_id ) : 0,
+							'sperre'    => WP_Agency_Edit_Sitzung::dauer(),
+							'restversuche' => WP_Agency_Edit_Sitzung::restversuche(),
 							'sites'  => array_map(
 								static fn( $s ) => array(
 									'id'     => $s['id'] ?? '',
@@ -395,6 +425,42 @@ class WP_Agency_Edit {
 				'methods'             => 'POST',
 				'permission_callback' => $recht,
 				'callback'            => array( $this, 'chat' ),
+			)
+		);
+
+		register_rest_route(
+			'wp-agency-edit/v1',
+			'/unlock',
+			array(
+				'methods'             => 'POST',
+				'permission_callback' => $recht,
+				'callback'            => static function ( WP_REST_Request $a ) {
+					$site_id = (string) $a->get_param( 'site' );
+					$erg     = WP_Agency_Edit_Sitzung::entsperren( (string) $a->get_param( 'passwort' ), $site_id );
+					if ( is_wp_error( $erg ) ) {
+						return new WP_REST_Response(
+							array( 'fehler' => $erg->get_error_message(), 'restversuche' => WP_Agency_Edit_Sitzung::restversuche() ),
+							200
+						);
+					}
+					return new WP_REST_Response(
+						array( 'entsperrt' => true, 'restzeit' => WP_Agency_Edit_Sitzung::restzeit( $site_id ) ),
+						200
+					);
+				},
+			)
+		);
+
+		register_rest_route(
+			'wp-agency-edit/v1',
+			'/lock',
+			array(
+				'methods'             => 'POST',
+				'permission_callback' => $recht,
+				'callback'            => static function () {
+					WP_Agency_Edit_Sitzung::sperren();
+					return new WP_REST_Response( array( 'entsperrt' => false ), 200 );
+				},
 			)
 		);
 
@@ -436,6 +502,15 @@ class WP_Agency_Edit {
 		if ( '' === $nachricht ) {
 			return new WP_REST_Response( array( 'fehler' => __( 'Keine Nachricht.', 'wp-agency-edit' ) ), 400 );
 		}
+		// Ohne entsperrte Sitzung wird nicht gearbeitet.
+		if ( ! WP_Agency_Edit_Sitzung::entsperrt( $site_id ) ) {
+			return new WP_REST_Response(
+				array( 'fehler' => __( 'Sitzung gesperrt.', 'wp-agency-edit' ), 'gesperrt' => true ),
+				200
+			);
+		}
+		// Jede Nachricht zählt als Lebenszeichen.
+		WP_Agency_Edit_Sitzung::beruehren( $site_id );
 
 		$key     = $this->verlauf_key( $site_id );
 		$verlauf = get_transient( $key );

@@ -1,6 +1,6 @@
 # Funktionen — vollständige Referenz
 
-Erzeugt am 2026-09-17 14:51:41 · WordPress 7.1 · PHP 8.4.25 · Plugin 1.0.0 · https://gofonia.life
+Erzeugt am 2026-09-17 15:01:16 · WordPress 7.1 · PHP 8.4.25 · Plugin 1.1.0 · https://gofonia.life
 
 Diese Datei wird aus einer **laufenden Installation** erzeugt: Klassen und Methoden über
 Reflexion, die Routen aus dem REST-Server, die Optionen aus der Datenbank, die Haken aus dem
@@ -17,9 +17,11 @@ Namensraum: `wp-agency-edit/v1`. Alle Routen verlangen `manage_options`.
 | GET | `/` | `namespace`, `context` |
 | GET | `/status` | — |
 | POST | `/chat` | — |
+| POST | `/unlock` | — |
+| POST | `/lock` | — |
 | POST | `/reset` | — |
 
-In der Anfrage verwendete Parameternamen: `nachricht`, `site`.
+In der Anfrage verwendete Parameternamen: `nachricht`, `passwort`, `site`.
 
 ---
 
@@ -33,6 +35,7 @@ In der Anfrage verwendete Parameternamen: `nachricht`, `site`.
 Kurzzeitspeicher (verfallen von selbst):
 
 - `wpaeg_faehig_cea379ea8da3fb723ce8483fd9c603d8` — Fähigkeitsliste einer Website, 5 Minuten.
+- `wpaeg_sitzung_3`
 
 ---
 
@@ -63,6 +66,20 @@ HTTP-Zugriff auf eine betreute Website.
 | `auskunft()` *(statisch)* | array $site | Auskunft der Gegenstelle. |
 | `faehigkeiten()` *(statisch)* | array $site | Fähigkeiten der Gegenstelle, die dieses Plugin dort anbietet. |
 | `pruefen()` *(statisch)* | array $site | Verbindung prüfen und den Stand festhalten. |
+
+### `includes/class-sitzung.php` — `WP_Agency_Edit_Sitzung`
+
+Sitzung und Passwortbestätigung.
+
+| Methode | Parameter | Zweck |
+|---|---|---|
+| `beruehren()` *(statisch)* | string $site_id | Lebenszeichen: die Ruhezeit beginnt von vorn. |
+| `dauer()` *(statisch)* | — | Ruhezeit, einstellbar über die Einstellungen. |
+| `entsperren()` *(statisch)* | string $passwort, string $site_id | Sitzung mit dem eigenen Passwort entsperren. |
+| `entsperrt()` *(statisch)* | string $site_id | Ist die Sitzung entsperrt — und zwar für genau diese Website? |
+| `restversuche()` *(statisch)* | — | Wie viele Fehlversuche sind noch erlaubt? |
+| `restzeit()` *(statisch)* | string $site_id | Verbleibende Sekunden bis zum Zufallen. |
+| `sperren()` *(statisch)* | — | Sitzung sperren (Abmelden). |
 
 ### `includes/class-speicher.php` — `WP_Agency_Edit_Speicher`
 
@@ -99,15 +116,18 @@ Hauptklasse.
 
 | Datei | Zeilen | Größe |
 |---|---:|---:|
-| `README.md` | 87 | 3812 B |
-| `assets/css/widget.css` | 172 | 2771 B |
-| `assets/js/widget.js` | 124 | 3172 B |
+| `CHANGELOG.md` | 26 | 1188 B |
+| `LICENSE` | — | 17984 B |
+| `README.md` | 136 | 5780 B |
+| `assets/css/widget.css` | 266 | 4182 B |
+| `assets/js/widget.js` | 244 | 6756 B |
 | `includes/class-agent.php` | 342 | 10022 B |
 | `includes/class-fernruf.php` | 206 | 6387 B |
+| `includes/class-sitzung.php` | 184 | 4583 B |
 | `includes/class-speicher.php` | 231 | 6829 B |
 | `prompts/agentur.md` | 42 | 1867 B |
-| `wp-agency-edit.php` | 478 | 19868 B |
-| **gesamt** | **1682** | |
+| `wp-agency-edit.php` | 553 | 23542 B |
+| **gesamt** | **2230** | |
 
 ---
 

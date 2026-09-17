@@ -161,6 +161,100 @@
 	filter: brightness(1.08);
 }
 
+/* --- Sperrbildschirm --- */
+#wpaeg-sperre {
+	padding: 18px 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.wpaeg-frage {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 700;
+	color: #121826;
+}
+
+.wpaeg-gewaehlt {
+	margin: 0;
+	padding: 9px 12px;
+	border-radius: 10px;
+	background: #eef2f5;
+	color: #121826;
+}
+
+.wpaeg-feld { display: block; }
+
+#wpaeg-passwort {
+	width: 100%;
+	padding: 11px 13px;
+	border: 1px solid #d0d5dd;
+	border-radius: 10px;
+	font-size: 14px;
+	font-family: inherit;
+}
+
+#wpaeg-passwort:focus {
+	outline: 2px solid #1a9f9a;
+	outline-offset: 1px;
+	border-color: #1a9f9a;
+}
+
+#wpaeg-auf {
+	border: none;
+	border-radius: 10px;
+	padding: 12px 18px;
+	background: linear-gradient(115deg, #1a9f9a, #0a5c5f);
+	color: #fff;
+	font-weight: 700;
+	font-size: 14px;
+	cursor: pointer;
+}
+
+#wpaeg-auf:disabled {
+	opacity: 0.6;
+	cursor: default;
+}
+
+.wpaeg-meldung {
+	margin: 0;
+	color: #8a1f1f;
+	font-size: 13px;
+	min-height: 1em;
+}
+
+.wpaeg-klein {
+	margin: 0;
+	color: #6b7480;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+#wpaeg-uhr {
+	font-size: 13px;
+	font-weight: 700;
+	color: #0f6b6e;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+#wpaeg-aus {
+	border: 1px solid #d0d5dd;
+	background: #fff;
+	border-radius: 8px;
+	padding: 5px 10px;
+	cursor: pointer;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+#wpaeg-aus:hover {
+	background: #f0f0f1;
+	color: #8a1f1f;
+	border-color: #e0b4b4;
+}
+
 @media (max-width: 600px) {
 	#wpaeg-widget {
 		right: 12px;
