@@ -83,6 +83,35 @@ dort als Vorschlag mit Vorschau, nicht sofort live. Der Agent kann offene
 Vorschläge auflisten und auf Anweisung freigeben oder verwerfen. Die letzte
 Entscheidung bleibt beim Eigentümer der Website.
 
+## Dokumentation
+
+- **[Funktionsreferenz](docs/funktionen.md)** — jede Klasse mit ihren Methoden,
+  alle REST-Routen, alle Datenbank-Optionen, die Haken und der Dateiaufbau.
+- **Nachlegen:** Die Referenz wird aus der **laufenden Installation** erzeugt,
+  damit sie nicht vom Code abweichen kann:
+
+  ```bash
+  wp eval-file wp-content/plugins/wp-agency-edit/docs/referenz-erheben.php > /tmp/doku.json
+  python3 docs/referenz-erzeugen.py . /tmp/doku.json
+  ```
+
+  Alles kommt aus dem laufenden System: Klassen und Methoden über Reflexion, die
+  Routen aus dem REST-Server, die Optionen aus der Datenbank, die Haken aus dem
+  Quelltext. Es gibt keine von Hand gepflegte Liste, die veralten könnte.
+
+### Aufbau
+
+```
+wp-agency-edit.php            Hauptklasse: Menü, Website-Liste, Chatfenster, REST-Routen
+includes/class-speicher.php   Website-Liste und verschlüsselte Token
+includes/class-fernruf.php    HTTP gegen eine betreute Website
+includes/class-agent.php      Werkzeugrunde gegen das Sprachmodell
+assets/js/widget.js           Chatfenster mit Website-Auswahl
+assets/css/widget.css         Gestaltung
+prompts/agentur.md            Systemanweisung
+docs/                         Referenz und die Skripte, die sie erzeugen
+```
+
 ## Sicherheit
 
 - **Anwendungspasswörter** aus dem WordPress-Kern, kein eigenes Schlüsselsystem.
