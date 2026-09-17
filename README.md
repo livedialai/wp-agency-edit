@@ -21,19 +21,15 @@ Kunde merkt nur, dass sich etwas ändert.
 
 ## Installation
 
-**Paket herunterladen** (Anmeldung bei GitHub nötig, das Repository ist privat):
+**Paket herunterladen** — das Repository ist öffentlich, keine Anmeldung nötig:
 
 ```
-https://github.com/livedialai/wp-agency-edit/releases/latest
+https://github.com/livedialai/wp-agency-edit/releases/latest/download/wp-agency-edit.zip
 ```
 
 Die Datei `wp-agency-edit.zip` entpackt nach `wp-agency-edit/` und lässt sich im
-Backend unter *Plugins → Installieren → Plugin hochladen* einspielen.
-
-Ein direkter Installationbefehl über eine URL ist bei einem privaten Repository
-**nicht möglich**: WordPress lehnt URLs mit eingebetteten Zugangsdaten ab
-(„keine gültige URL"). Wer das Plugin per Kommandozeile nachziehen will, macht
-das Repository öffentlich — dann geht:
+Backend unter *Plugins → Installieren → Plugin hochladen* einspielen. Oder in
+einem Befehl:
 
 ```bash
 wp plugin install https://github.com/livedialai/wp-agency-edit/releases/latest/download/wp-agency-edit.zip --force
